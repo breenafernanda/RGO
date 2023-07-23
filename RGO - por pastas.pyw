@@ -13,8 +13,38 @@ import pyautogui as pg
 import tkinter as tk
 from tkinter import ttk
 import time
+from google_drive_downloader import GoogleDriveDownloader as gdd
+
+
 
 def janela_rgo():
+    def criar_pasta_cliente(opcoes_franq, input_cliente):
+        franqueado_selecionado = opcoes_franq.get()
+        nome_cliente = input_cliente.get()
+
+        caminho_pasta_franqueados = 'config/Franqueados'
+        caminho_franqueado_selecionado = os.path.join(caminho_pasta_franqueados, franqueado_selecionado)
+
+        # Verifica se a pasta do franqueado selecionado existe
+        if os.path.exists(caminho_franqueado_selecionado):
+            caminho_cliente = os.path.join(caminho_franqueado_selecionado, nome_cliente)
+            
+            # Verifica se a pasta do cliente já existe
+            if not os.path.exists(caminho_cliente):
+                try:
+                    os.makedirs(caminho_cliente)
+                    print("Pasta do cliente criada com sucesso!")
+
+                    # Criar a pasta de fotos dentro da pasta do cliente
+                    caminho_pasta_fotos = os.path.join(caminho_cliente, "Fotos")
+                    os.makedirs(caminho_pasta_fotos)
+                    print("Pasta de fotos criada com sucesso!")
+                except OSError:
+                    print("Erro ao criar pasta do cliente ou pasta de fotos.")
+            else:
+                print("A pasta do cliente já existe.")
+        else:
+            print("Pasta do franqueado não encontrada.")
     root = tk.Tk()
     root.title("Kinsol Energias Renováveis - RGO")
 
@@ -52,7 +82,7 @@ def janela_rgo():
     button_criar_pasta = tk.Button(root, text="CRIAR PASTAS", command=BOTAO_CRIAR_PASTAS, bg="#D8A7C1")  # Botão roxo claro
     button_mais = tk.Button(root, text=" + ", command=BOTAO_MAIS, bg="#A54694", fg='#FFFFFF')  # Botão roxo com texto branco
 
-    output = tk.Text(root, width=85, height=22, bg='#FFFFFF', fg='#A54694', font=("Times New Roman", 12))
+    output = tk.Text(root, width=85, height=25, bg='#FFFFFF', fg='#A54694', font=("Times New Roman", 12))
 
     # OPÇÕES DE TELHADOS
     opcoes_telhado = tk.StringVar(root)
@@ -86,7 +116,7 @@ def janela_rgo():
     opcoes_franq = tk.StringVar(root)
     opcoes_franq.set("Franqueado Kinsol")  # default option
 
-    caminho_pasta_franqueados = 'config\Franqueados'
+    caminho_pasta_franqueados = 'config/Franqueados'
     opt_franq = os.listdir(caminho_pasta_franqueados)
 
     menu_franqueado = tk.OptionMenu(root, opcoes_franq, *opt_franq, command=franqueados)
@@ -137,12 +167,6 @@ def imprimir(text):
 def restart_window():
     global root  # Make 'root' a global variable so it can be accessed outside the function
     root.destroy()  # Destroy the current window
-
-    # # Reinitialize the root window and recreate widgets and configurations
-    # root, input_cliente, input_email, input_end, input_fone, opcoes_telhado, opcoes_adequacao, opcoes_disjuntor, opcoes_caibro, input_corrente, opcoes_franq, output = janela_rgo()
-    # root.geometry("+900+00")
-    # imprimir(checklist)
-    # root.mainloop()  # Start the main event loop of the window
 
 
 def BOTAO_MAIS():
@@ -309,17 +333,36 @@ def adequacao_selecionado(opcoes_adequacao):
     imprimir(f"Tipo de Adequação de Padrão Selecionado: {opcoes_adequacao}")
 
 
+
 def BOTAO_RGO():
+    #verificar se o relatorio_RGO.docx existe
+        #se não existir, realizar o download com o modulo googledrivedownloader e unzip no diretorio correto
     # Abrir modelo de RGO
+
+    # Caminho para o diretório onde o arquivo será salvo
+    diretorio = 'config'
+
+    # Nome do arquivo a ser verificado e baixado
+    nome_arquivo = 'relatorio_RGO.docx'
+
+    # Verificar se o arquivo existe
+    caminho_arquivo = os.path.join(diretorio, nome_arquivo)
+    if not os.path.exists(caminho_arquivo):
+        # Realizar o download usando o GoogleDriveDownloader
+        file_id = 'COLOQUE_AQUI_O_ID_DO_ARQUIVO_NO_GOOGLE_DRIVE'
+        gdd.download_file_from_google_drive(file_id=file_id, dest_path=caminho_arquivo, overwrite=True)
+
+    # Abrir o modelo de RGO com a biblioteca docx
+    # document = docx.Document(caminho_arquivo)
     document = docx.Document(r'config\relatorio_RGO.docx')
+    
 
     def salvar(cliente):
         # imprimir('\n')
         
         try:
             document.save(f'config\RGOs\Relatório de Gestão de Obra_RGO_{cliente}.docx')
-            # imprimir(f'Documento salvo como:')
-            # imprimir(f'Relatório de Gestão de Obra_RGO_{cliente}.docx')
+
 
         except: 
             # imprimir(f'Erro ao salvar, fechar arquivo e tentar novamente')
@@ -843,11 +886,14 @@ def BOTAO_RGO():
                 caminho_pasta_franqueados = f'config\Franqueados\{franqueado}'
                 pasta_cliente = f'{caminho_pasta_franqueados}\{cliente}'
                 os.mkdir(pasta_cliente)
-            except Exception as e: print('erro ao criar pasta cliente')
+            except Exception as e: print('erro ao criar pasta cliente', e)
             try:
                 caminho_pasta_fotos = f'config\Franqueados\{franqueado}\{cliente}\Fotos'
+                print('aqui')
                 os.mkdir(caminho_pasta_fotos)
-            except Exception as e: imprimir(e)
+                print('aqui2')
+
+            except Exception as e: print(e)
 
             try:
                 email = input_email.get()
@@ -947,7 +993,7 @@ checklist = f"ANTES DE ELABORAR O RGO, RENOMEIE AS FOTOS CONFORME AS CATEGORIAS 
 # Define a janela e os widgets
 root, input_cliente, input_email, input_end, input_fone,opcoes_telhado, opcoes_adequacao, opcoes_disjuntor, opcoes_caibro, input_corrente ,opcoes_franq , output = janela_rgo()
 
-root.geometry("+900+00")
+root.geometry("+930+00")
 
 imprimir(checklist)
 
